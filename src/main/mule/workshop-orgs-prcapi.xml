@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="workshop-github-flow" doc:id="3a9c9006-fc45-4ba4-be21-98541f08d77a" >
+		<http:listener doc:name="Listener" doc:id="b9508265-6ecd-4d77-b909-02790c1ed51d" config-ref="ProcessAPIConfig" path="/api/v1/github/" />
+		<logger level="INFO" doc:name="Logger" doc:id="17e81198-0d2a-4a1e-9b9f-e9dc8e757c62" message='get:\github\' />
+		<flow-ref doc:name="Flow Reference" doc:id="d5eee35d-aaed-44ea-9a46-8634aa2700fe" name="workshop-repo-find" />
+	</flow>
+	<flow name="workshop-github-username-flow" doc:id="b87df076-9a4c-45e3-a147-f4c4b2e8d052" >
+		<http:listener doc:name="Listener" doc:id="383575c0-b77e-4a2d-8f10-ae03e4d5897f" config-ref="ProcessAPIConfig" path="/api/v1/github/{username}" />
+		<logger level="INFO" doc:name="Logger" doc:id="97cd6f39-21d3-4db7-bc82-b389e0590231" message='#["get:\github\$(attributes.uriParams.username)"]' />
+		<flow-ref doc:name="Flow Reference" doc:id="789e4dff-b738-4697-9b09-64bb7dbd32b8" name="workshop-repo-find"/>
+	</flow>
+	<sub-flow name="workshop-repo-find" doc:id="976a150b-a400-47f4-a489-be31e6f08094" >
+		<ee:transform doc:name="set-query-params" doc:id="f512e6f1-4e28-4939-8137-64084bc1d725" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="queryParams" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="req-github-system-api" doc:id="2e0945c0-0767-43e2-a713-2b3c6282e95c" config-ref="SystemAPIRequest" path='#["/api/v1/github/$(attributes.uriParams.username default "scg-wedo")"]'>
+			<http:query-params ><![CDATA[#[{
+	page: 1,
+	per_page: 100,
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="response" doc:id="55ee938e-50b9-4e09-83fc-5c68da54485c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var search = vars.queryParams.search default ""
+
+---
+payload filter ((item, i) -> (lower(item.name) default "" contains lower(search)) or (lower(item.description) default "" contains lower(search))) map ((item,i) -> {
+	id: item.id,
+	node_id: item.node_id,
+	name: item.name,
+	description: item.description,
+	"private": item."private",
+    ssh_url: item.ssh_url,
+    homepage: item.homepage,
+    size: item.size,
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>
