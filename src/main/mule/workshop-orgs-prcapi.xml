@@ -6,12 +6,12 @@
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="workshop-github-flow" doc:id="3a9c9006-fc45-4ba4-be21-98541f08d77a" >
-		<http:listener doc:name="Listener" doc:id="b9508265-6ecd-4d77-b909-02790c1ed51d" config-ref="ProcessAPIConfig" path="/api/v1/github/" />
+		<http:listener doc:name="Listener" doc:id="b9508265-6ecd-4d77-b909-02790c1ed51d" config-ref="ProcessAPIConfig" path="/coding-day/api/v1/github/" />
 		<logger level="INFO" doc:name="Logger" doc:id="17e81198-0d2a-4a1e-9b9f-e9dc8e757c62" message='get:\github\' />
 		<flow-ref doc:name="Flow Reference" doc:id="d5eee35d-aaed-44ea-9a46-8634aa2700fe" name="workshop-repo-find" />
 	</flow>
 	<flow name="workshop-github-username-flow" doc:id="b87df076-9a4c-45e3-a147-f4c4b2e8d052" >
-		<http:listener doc:name="Listener" doc:id="383575c0-b77e-4a2d-8f10-ae03e4d5897f" config-ref="ProcessAPIConfig" path="/api/v1/github/{username}" />
+		<http:listener doc:name="Listener" doc:id="383575c0-b77e-4a2d-8f10-ae03e4d5897f" config-ref="ProcessAPIConfig" path="/coding-day/api/v1/github/{username}" />
 		<logger level="INFO" doc:name="Logger" doc:id="97cd6f39-21d3-4db7-bc82-b389e0590231" message='#["get:\github\$(attributes.uriParams.username)"]' />
 		<flow-ref doc:name="Flow Reference" doc:id="789e4dff-b738-4697-9b09-64bb7dbd32b8" name="workshop-repo-find"/>
 	</flow>
@@ -26,7 +26,7 @@ output application/json
 attributes.queryParams]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<http:request method="GET" doc:name="req-github-system-api" doc:id="2e0945c0-0767-43e2-a713-2b3c6282e95c" config-ref="SystemAPIRequest" path='#["/api/v1/github/$(attributes.uriParams.username default "scg-wedo")"]'>
+		<http:request method="GET" doc:name="req-github-system-api" doc:id="2e0945c0-0767-43e2-a713-2b3c6282e95c" config-ref="SystemAPIRequest" path='#["/coding-day/api/v1/github/$(attributes.uriParams.username default "scg-wedo")"]'>
 			<http:query-params ><![CDATA[#[{
 ({
 	page: 1,
@@ -42,7 +42,7 @@ import * from dw::core::Arrays
 output application/json
 var search = vars.queryParams.search default ""
 var page = vars.queryParams.page default 1
-var per_page = vars.queryParams.page default 30
+var per_page = vars.queryParams.per_page default 30
 
 ---
 slice(payload filter ((item, i) -> (lower(item.name) default "" contains lower(search)) or (lower(item.description) default "" contains lower(search))) map ((item,i) -> {
