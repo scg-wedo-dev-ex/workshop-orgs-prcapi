@@ -28,27 +28,40 @@ attributes.queryParams]]></ee:set-variable>
 		</ee:transform>
 		<http:request method="GET" doc:name="req-github-system-api" doc:id="2e0945c0-0767-43e2-a713-2b3c6282e95c" config-ref="SystemAPIRequest" path='#["/api/v1/github/$(attributes.uriParams.username default "scg-wedo")"]'>
 			<http:query-params ><![CDATA[#[{
+({
 	page: 1,
-	per_page: 100,
+	per_page: 1000,
+}),
+(vars.queryParams - "page" - "per_page")
 }]]]></http:query-params>
 		</http:request>
 		<ee:transform doc:name="response" doc:id="55ee938e-50b9-4e09-83fc-5c68da54485c" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Arrays
 output application/json
 var search = vars.queryParams.search default ""
+var page = vars.queryParams.page default 1
+var per_page = vars.queryParams.page default 30
 
 ---
-payload filter ((item, i) -> (lower(item.name) default "" contains lower(search)) or (lower(item.description) default "" contains lower(search))) map ((item,i) -> {
+slice(payload filter ((item, i) -> (lower(item.name) default "" contains lower(search)) or (lower(item.description) default "" contains lower(search))) map ((item,i) -> {
 	id: item.id,
 	node_id: item.node_id,
 	name: item.name,
+    full_name: item.full_name,
 	description: item.description,
+  	url: item.url,
+  	html_url: item.html_url,
+  	language: item.language,
 	"private": item."private",
     ssh_url: item.ssh_url,
     homepage: item.homepage,
     size: item.size,
-})]]></ee:set-payload>
+  	pushed_at: item.pushed_at,
+  	created_at: item.created_at,
+  	updated_at: item.updated_at,
+}), (page - 1) * per_page, page * per_page)]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>
